@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SecureTask — API Demo</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #161925;
+    --panel-2: #1e2233;
+    --border: #2a2f42;
+    --text: #e7e9f0;
+    --muted: #9096ab;
+    --accent: #6c8cff;
+    --accent-2: #4ade80;
+    --danger: #f87171;
+    --warn: #fbbf24;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 28px; border-bottom: 1px solid var(--border);
+  }
+  .topbar h1 { font-size: 18px; margin: 0; letter-spacing: 0.3px; }
+  .topbar h1 span { color: var(--accent); }
+  .userchip { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); }
+  .badge {
+    padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge.admin { background: rgba(251, 191, 36, 0.15); color: var(--warn); }
+  .badge.user { background: rgba(108, 140, 255, 0.15); color: var(--accent); }
+  button.linklike {
+    background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px;
+    text-decoration: underline;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 28px; max-width: 420px; margin: 60px auto;
+  }
+  .card h2 { margin-top: 0; font-size: 20px; }
+  .field { margin-bottom: 14px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  input, select, textarea {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--panel-2); color: var(--text); font-size: 14px; font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.primary {
+    width: 100%; padding: 11px; border-radius: 8px; border: none; background: var(--accent);
+    color: #0b0d14; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 6px;
+  }
+  button.primary:hover { filter: brightness(1.08); }
+  button.secondary {
+    padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); font-size: 13px; cursor: pointer;
+  }
+  button.danger { border-color: rgba(248,113,113,0.4); color: var(--danger); }
+  .switch { text-align: center; margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .switch button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 13px; }
+  .msg { padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; }
+  .msg.error { background: rgba(248,113,113,0.12); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
+  .msg.success { background: rgba(74,222,128,0.12); color: var(--accent-2); border: 1px solid rgba(74,222,128,0.3); }
+  .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+  .newtask { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; }
+  .newtask .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .newtask .row > div { flex: 1; min-width: 140px; }
+  .tasklist { display: flex; flex-direction: column; gap: 10px; }
+  .task {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; flex-wrap: wrap;
+  }
+  .task .info { flex: 1; min-width: 220px; }
+  .task h3 { margin: 0 0 4px; font-size: 15px; }
+  .task p { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; text-transform: capitalize; }
+  .tag.status-pending { background: rgba(251,191,36,0.15); color: var(--warn); }
+  .tag.status-in_progress { background: rgba(108,140,255,0.15); color: var(--accent); }
+  .tag.status-completed { background: rgba(74,222,128,0.15); color: var(--accent-2); }
+  .tag.priority-low { background: rgba(255,255,255,0.06); color: var(--muted); }
+  .tag.priority-medium { background: rgba(251,191,36,0.1); color: var(--warn); }
+  .tag.priority-high { background: rgba(248,113,113,0.12); color: var(--danger); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .empty { text-align: center; color: var(--muted); padding: 40px; font-size: 14px; }
+  .pager { display: flex; justify-content: center; gap: 12px; margin-top: 20px; align-items: center; font-size: 13px; color: var(--muted); }
+  .owner-note { font-size: 11px; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Secure<span>Task</span></h1>
+  <div id="userchip" class="userchip" style="display:none;"></div>
+</div>
+
+<div class="wrap" id="app"></div>
+
+<script>
+const API_BASE = "/api/v1";
+
+const state = {
+  accessToken: localStorage.getItem("st_access") || null,
+  refreshToken: localStorage.getItem("st_refresh") || null,
+  user: null,
+  view: "login", // login | register | dashboard
+  page: 1,
+  pageSize: 6,
+  tasks: { total: 0, items: [] },
+  statusFilter: "",
+  message: null, // {type, text}
+};
+
+function setTokens(access, refresh) {
+  state.accessToken = access;
+  state.refreshToken = refresh;
+  if (access) localStorage.setItem("st_access", access); else localStorage.removeItem("st_access");
+  if (refresh) localStorage.setItem("st_refresh", refresh); else localStorage.removeItem("st_refresh");
+}
+
+function flash(type, text) {
+  state.message = { type, text };
+  render();
+  setTimeout(() => { state.message = null; render(); }, 4000);
+}
+
+async function api(path, { method = "GET", body, auth = true, retry = true } = {}) {
+  const headers = { "Content-Type": "application/json" };
+  if (auth && state.accessToken) headers["Authorization"] = "Bearer " + state.accessToken;
+
+  const res = await fetch(API_BASE + path, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.status === 401 && auth && retry && state.refreshToken) {
+    const refreshed = await tryRefresh();
+    if (refreshed) return api(path, { method, body, auth, retry: false });
+  }
+
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* no body, e.g. 204 */ }
+
+  if (!res.ok) {
+    const msg = data?.error?.message || data?.detail || "Request failed";
+    const details = data?.error?.details;
+    const detailText = Array.isArray(details) ? details.map(d => `${d.field}: ${d.message}`).join("; ") : "";
+    throw new Error(detailText ? `${msg} (${detailText})` : msg);
+  }
+  return data;
+}
+
+async function tryRefresh() {
+  try {
+    const res = await fetch(API_BASE + "/auth/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: state.refreshToken }),
+    });
+    if (!res.ok) throw new Error("refresh failed");
+    const data = await res.json();
+    setTokens(data.access_token, data.refresh_token);
+    return true;
+  } catch (e) {
+    logout();
+    return false;
+  }
+}
+
+function logout() {
+  setTokens(null, null);
+  state.user = null;
+  state.view = "login";
+  render();
+}
+
+async function loadMe() {
+  state.user = await api("/auth/me");
+}
+
+async function loadTasks() {
+  const qs = new URLSearchParams({ page: state.page, page_size: state.pageSize });
+  if (state.statusFilter) qs.set("status", state.statusFilter);
+  state.tasks = await api("/tasks?" + qs.toString());
+}
+
+// ---------- Rendering ----------
+
+function render() {
+  const app = document.getElementById("app");
+  const chip = document.getElementById("userchip");
+
+  if (state.user) {
+    chip.style.display = "flex";
+    chip.innerHTML = `
+      <span>${escapeHtml(state.user.full_name)}</span>
+      <span class="badge ${state.user.role}">${state.user.role}</span>
+      <button class="linklike" onclick="logout()">Log out</button>
+    `;
+  } else {
+    chip.style.display = "none";
+  }
+
+  app.innerHTML = "";
+  if (state.view === "login") app.appendChild(renderAuthCard(true));
+  else if (state.view === "register") app.appendChild(renderAuthCard(false));
+  else if (state.view === "dashboard") app.appendChild(renderDashboard());
+}
+
+function messageBanner() {
+  if (!state.message) return "";
+  return `<div class="msg ${state.message.type}">${escapeHtml(state.message.text)}</div>`;
+}
+
+function renderAuthCard(isLogin) {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    ${messageBanner()}
+    <h2>${isLogin ? "Log in" : "Create account"}</h2>
+    <form id="authForm">
+      ${!isLogin ? `
+      <div class="field">
+        <label>Full name</label>
+        <input type="text" name="full_name" required />
+      </div>` : ""}
+      <div class="field">
+        <label>Email</label>
+        <input type="email" name="email" required />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" required minlength="8" />
+      </div>
+      <button class="primary" type="submit">${isLogin ? "Log in" : "Register"}</button>
+    </form>
+    <div class="switch">
+      ${isLogin
+        ? `No account? <button onclick="switchView('register')">Register</button>`
+        : `Already have an account? <button onclick="switchView('login')">Log in</button>`}
+    </div>
+    ${isLogin ? `<div class="owner-note" style="text-align:center;margin-top:10px;">First registered user automatically becomes admin.</div>` : ""}
+  `;
+
+  card.querySelector("#authForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    try {
+      if (isLogin) {
+        const data = await api("/auth/login", {
+          method: "POST",
+          auth: false,
+          body: { email: form.get("email"), password: form.get("password") },
+        });
+        setTokens(data.access_token, data.refresh_token);
+        await loadMe();
+        state.view = "dashboard";
+        await loadTasks();
+        flash("success", "Welcome back!");
+      } else {
+        await api("/auth/register", {
+          method: "POST",
+          auth: false,
+          body: {
+            full_name: form.get("full_name"),
+            email: form.get("email"),
+            password: form.get("password"),
+          },
+        });
+        flash("success", "Account created. Please log in.");
+        state.view = "login";
+        render();
+      }
+    } catch (err) {
+      flash("error", err.message);
+    }
+  });
+
+  return card;
+}
+
+function switchView(v) {
+  state.view = v;
+  state.message = null;
+  render();
+}
+
+function renderDashboard() {
+  const wrap = document.createElement("div");
+
+  const newTaskForm = `
+    <div class="newtask">
+      <h3 style="margin-top:0;">New task</h3>
+      <form id="newTaskForm">
+        <div class="field"><label>Title</label><input name="title" required maxlength="255" /></div>
+        <div class="field"><label>Description</label><textarea name="description" rows="2" maxlength="2000"></textarea></div>
+        <div class="row">
+          <div class="field">
+            <label>Status</label>
+            <select name="status">
+              <option value="pending">Pending</option>
+              <option value="in_progress">In progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Priority</label>
+            <select name="priority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        <button class="primary" type="submit">Add task</button>
+      </form>
+    </div>
+  `;
+
+  const filterBar = `
+    <div class="dash-header">
+      <div>
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;">Filter by status</label>
+        <select id="statusFilter">
+          <option value="">All</option>
+          <option value="pending">Pending</option>
+          <option value="in_progress">In progress</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+      ${state.user?.role === "admin" ? `<div class="owner-note">Admin view: showing tasks from all users</div>` : ""}
+    </div>
+  `;
+
+  const taskItems = state.tasks.items.length
+    ? state.tasks.items.map(taskCardHtml).join("")
+    : `<div class="empty">No tasks yet. Add one above to get started.</div>`;
+
+  const totalPages = Math.max(1, Math.ceil(state.tasks.total / state.pageSize));
+
+  wrap.innerHTML = `
+    ${messageBanner()}
+    ${newTaskForm}
+    ${filterBar}
+    <div class="tasklist">${taskItems}</div>
+    <div class="pager">
+      <button class="secondary" id="prevPage" ${state.page <= 1 ? "disabled" : ""}>← Prev</button>
+      <span>Page ${state.page} of ${totalPages} · ${state.tasks.total} task(s)</span>
+      <button class="secondary" id="nextPage" ${state.page >= totalPages ? "disabled" : ""}>Next →</button>
+    </div>
+  `;
+
+  wrap.querySelector("#newTaskForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    try {
+      await api("/tasks", {
+        method: "POST",
+        body: {
+          title: form.get("title"),
+          description: form.get("description") || null,
+          status: form.get("status"),
+          priority: form.get("priority"),
+        },
+      });
+      flash("success", "Task created");
+      e.target.reset();
+      await loadTasks();
+      render();
+    } catch (err) {
+      flash("error", err.message);
+    }
+  });
+
+  wrap.querySelector("#statusFilter").value = state.statusFilter;
+  wrap.querySelector("#statusFilter").addEventListener("change", async (e) => {
+    state.statusFilter = e.target.value;
+    state.page = 1;
+    await loadTasks();
+    render();
+  });
+
+  wrap.querySelector("#prevPage")?.addEventListener("click", async () => {
+    if (state.page > 1) { state.page--; await loadTasks(); render(); }
+  });
+  wrap.querySelector("#nextPage")?.addEventListener("click", async () => {
+    state.page++; await loadTasks(); render();
+  });
+
+  wrap.querySelectorAll("[data-action]").forEach((el) => {
+    el.addEventListener("click", async () => {
+      const id = el.getAttribute("data-id");
+      const action = el.getAttribute("data-action");
+      try {
+        if (action === "delete") {
+          if (!confirm("Delete this task?")) return;
+          await api(`/tasks/${id}`, { method: "DELETE" });
+          flash("success", "Task deleted");
+        } else if (action === "advance") {
+          const current = el.getAttribute("data-status");
+          const next = current === "pending" ? "in_progress" : current === "in_progress" ? "completed" : "pending";
+          await api(`/tasks/${id}`, { method: "PUT", body: { status: next } });
+          flash("success", "Task updated");
+        }
+        await loadTasks();
+        render();
+      } catch (err) {
+        flash("error", err.message);
+      }
+    });
+  });
+
+  return wrap;
+}
+
+function taskCardHtml(t) {
+  const nextLabel = t.status === "pending" ? "Start" : t.status === "in_progress" ? "Complete" : "Reopen";
+  return `
+    <div class="task">
+      <div class="info">
+        <h3>${escapeHtml(t.title)}</h3>
+        ${t.description ? `<p>${escapeHtml(t.description)}</p>` : ""}
+        <div class="tags">
+          <span class="tag status-${t.status}">${t.status.replace("_", " ")}</span>
+          <span class="tag priority-${t.priority}">${t.priority} priority</span>
+        </div>
+        ${state.user?.role === "admin" ? `<div class="owner-note">Owner: ${t.owner_id}</div>` : ""}
+      </div>
+      <div class="actions">
+        <button class="secondary" data-action="advance" data-id="${t.id}" data-status="${t.status}">${nextLabel}</button>
+        <button class="secondary danger" data-action="delete" data-id="${t.id}">Delete</button>
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
+
+// ---------- Boot ----------
+(async function init() {
+  if (state.accessToken) {
+    try {
+      await loadMe();
+      state.view = "dashboard";
+      await loadTasks();
+    } catch (e) {
+      logout();
+      return;
+    }
+  }
+  render();
+})();
+</script>
+</body>
+</html>
